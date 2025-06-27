@@ -64,15 +64,9 @@ The bot analyzes user input and matches it with a relevant category using keywor
 <img width="958" alt="Screenshot 2025-06-27 111403" src="https://github.com/user-attachments/assets/ca76a510-7d06-4cbf-9e31-3cd46a061719" />
 
 
-
 ## 🌱 Credits
 
-* Developed by \[Your Name]
+* Developed by \[Preethvijay C]
 * Nature data and fun facts sourced from open knowledge
 * SVG leaves based on forest iconography
 
-## 📃 License
-
-This project is licensed under the **MIT License**. Feel free to use, modify, and distribute it as you like.
-
-Let me know if you want a **separate CSS and JS file version** or need help deploying it online (e.g. GitHub Pages).

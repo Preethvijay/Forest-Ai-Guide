@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forest AI Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e6f5e6 0%, #a8e063 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            width: 400px;
+            height: 600px;
+            background: rgba(178, 215, 162, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            animation: slideIn 0.8s ease-out;
+            border: 2px solid #3a5a40;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #588157 0%, #3a5a40 100%);
+            color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 2px solid #344e41;
+        }
+
+        .chat-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 1px 1px 2px #344e41;
+        }
+
+        .status {
+            font-size: 14px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .status::before {
+            content: '●';
+            color: #70e000;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path fill="%233a5a40" fill-opacity="0.05" d="M30,10 Q50,5 70,10 Q90,15 80,30 Q85,50 80,70 Q70,90 50,85 Q30,90 20,70 Q15,50 20,30 Q10,15 30,10 Z"/></svg>');
+            background-size: 200px;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #588157;
+            border-radius: 10px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            animation: messageSlide 0.5s ease-out;
+            opacity: 0;
+            animation-fill-mode: forwards;
+        }
+
+        @keyframes messageSlide {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .user-message {
+            text-align: right;
+        }
+
+        .bot-message {
+            text-align: left;
+        }
+
+        .message-bubble {
+            display: inline-block;
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.4;
+            position: relative;
+            word-wrap: break-word;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .user-message .message-bubble {
+            background: linear-gradient(135deg, #3a5a40 0%, #588157 100%);
+            color: white;
+            border-bottom-right-radius: 5px;
+            border: 1px solid #344e41;
+        }
+
+        .bot-message .message-bubble {
+            background: linear-gradient(135deg, #a3b18a 0%, #588157 100%);
+            color: #2b2d42;
+            border-bottom-left-radius: 5px;
+            border: 1px solid #3a5a40;
+        }
+
+        .typing-indicator {
+            display: none;
+            text-align: left;
+            margin-bottom: 15px;
+        }
+
+        .typing-indicator .message-bubble {
+            background: linear-gradient(135deg, #a3b18a 0%, #588157 100%);
+            border: 1px solid #3a5a40;
+            padding: 16px 20px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #344e41;
+            animation: typingBounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typingBounce {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .chat-input {
+            padding: 20px;
+            background: #588157;
+            border-top: 2px solid #3a5a40;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #a3b18a;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+            background-color: #f8f9fa;
+        }
+
+        .message-input:focus {
+            border-color: #344e41;
+            box-shadow: 0 0 0 3px rgba(52, 78, 65, 0.2);
+        }
+
+        .send-button {
+            width: 45px;
+            height: 45px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #344e41 0%, #3a5a40 100%);
+            color: #f8f9fa;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 18px;
+            border: 1px solid #2b2d42;
+        }
+
+        .send-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(52, 78, 65, 0.4);
+            background: linear-gradient(135deg, #3a5a40 0%, #344e41 100%);
+        }
+
+        .send-button:active {
+            transform: scale(0.95);
+        }
+
+        .send-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Leaf particles animation */
+        .leaves {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .leaf {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%233a5a40"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8Z"/></svg>');
+            background-size: contain;
+            background-repeat: no-repeat;
+            animation: float 15s infinite linear;
+            opacity: 0.6;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(180vh) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.6;
+            }
+            70% {
+                opacity: 0.6;
+            }
+            100% {
+                transform: translateY(-10vh) translateX(100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Responsive design */
+        @media (max-width: 480px) {
+            .chat-container {
+                width: 95%;
+                height: 90vh;
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="leaves" id="leaves"></div>
+    
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>Forest AI Guide</h1>
+            <div class="status">Online</div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot-message">
+                <div class="message-bubble">
+                    Welcome to the forest! 🌿 I'm your nature guide. Ask me about plants, trees, or wildlife!
+                </div>
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="message-bubble">
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <div class="input-container">
+                <input 
+                    type="text" 
+                    class="message-input" 
+                    id="messageInput" 
+                    placeholder="Type your message..."
+                    maxlength="500"
+                >
+                <button class="send-button" id="sendButton">
+                    ➤
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ChatBot {
+            constructor() {
+                this.chatMessages = document.getElementById('chatMessages');
+                this.messageInput = document.getElementById('messageInput');
+                this.sendButton = document.getElementById('sendButton');
+                this.typingIndicator = document.getElementById('typingIndicator');
+                
+                this.natureResponses = [
+                    "The forest is full of wonders! Did you know trees communicate through underground fungal networks?",
+                    "Nature has so much to teach us. The oldest known tree is a bristlecone pine named Methuselah at over 4,800 years old!",
+                    "Forests are the lungs of our planet, producing oxygen and absorbing carbon dioxide.",
+                    "Every leaf plays its part in the ecosystem, just like every creature has its purpose.",
+                    "The quiet beauty of the woods reminds us to slow down and appreciate the present moment.",
+                    "Did you know some trees can live for thousands of years? Nature's patience is incredible!",
+                    "The changing seasons in a forest show us the beauty of transformation and renewal.",
+                    "Even the smallest stream contributes to the mightiest river - nature teaches us about connection.",
+                    "The diversity of life in a healthy forest is nature's masterpiece.",
+                    "Walking among trees can reduce stress and boost your mood - nature's therapy!"
+                ];
+                
+                this.treeFacts = [
+                    "Oak trees can live for over 1,000 years and support more life forms than any other native trees.",
+                    "The giant sequoia is the largest tree in the world by volume, with some over 50,000 cubic feet!",
+                    "Birch trees have white bark that reflects sunlight, protecting them from getting sunburned.",
+                    "The rings in a tree trunk not only tell its age but also record environmental conditions each year.",
+                    "Some pine trees require fire to release their seeds - nature's way of ensuring regeneration.",
+                    "Willow bark contains salicin, which was used to develop aspirin.",
+                    "The baobab tree can store up to 32,000 gallons of water in its trunk for dry seasons.",
+                    "Bamboo is the fastest growing woody plant, with some species growing 35 inches in a single day!",
+                    "The quaking aspen's leaves tremble because their stems are flattened and flexible.",
+                    "The oldest known living tree is a bristlecone pine in California, over 5,000 years old."
+                ];
+                
+                this.plantFacts = [
+                    "The titan arum's flower is the largest in the world and smells like rotting flesh to attract pollinators.",
+                    "Sunflowers track the sun's movement across the sky, a phenomenon called heliotropism.",
+                    "Some plants like the Venus flytrap are carnivorous, getting nutrients from insects.",
+                    "The corpse flower blooms only once every 7-10 years and smells like rotting meat.",
+                    "Bamboo can grow up to 35 inches in a single day under the right conditions.",
+                    "The sensitive plant (Mimosa pudica) folds its leaves when touched as a defense mechanism.",
+                    "The seeds of the lotus plant can remain viable for over 1,000 years.",
+                    "Some orchids can live for up to 100 years, making them some of the longest-living flowers.",
+                    "The world's smallest flowering plant is Wolffia globosa, about the size of a grain of rice.",
+                    "The rafflesia produces the world's largest flower, measuring up to 3 feet across."
+                ];
+                
+                this.init();
+                this.createLeaves();
+            }
+            
+            init() {
+                this.sendButton.addEventListener('click', () => this.sendMessage());
+                this.messageInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.sendMessage();
+                    }
+                });
+                
+                this.messageInput.addEventListener('input', () => {
+                    this.sendButton.disabled = this.messageInput.value.trim() === '';
+                });
+            }
+            
+            sendMessage() {
+                const message = this.messageInput.value.trim();
+                if (!message) return;
+                
+                this.addMessage(message, 'user');
+                this.messageInput.value = '';
+                this.sendButton.disabled = true;
+                
+                this.showTyping();
+                
+                setTimeout(() => {
+                    this.hideTyping();
+                    this.generateNatureResponse(message);
+                }, 1500 + Math.random() * 1000);
+            }
+            
+            addMessage(text, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}-message`;
+                
+                const bubbleDiv = document.createElement('div');
+                bubbleDiv.className = 'message-bubble';
+                bubbleDiv.textContent = text;
+                
+                messageDiv.appendChild(bubbleDiv);
+                this.chatMessages.appendChild(messageDiv);
+                
+                // Add leaf animation for bot messages
+                if (sender === 'bot') {
+                    this.createFallingLeaf();
+                }
+                
+                this.scrollToBottom();
+            }
+            
+            generateNatureResponse(userMessage) {
+                let response;
+                const lowerMessage = userMessage.toLowerCase();
+                
+                if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+                    response = "Hello nature lover! 🌱 What would you like to know about forests today?";
+                } else if (lowerMessage.includes('how are you')) {
+                    response = "I'm flourishing like a well-watered sapling! The forest is full of life today.";
+                } else if (lowerMessage.includes('tree') || lowerMessage.includes('trees')) {
+                    response = this.treeFacts[Math.floor(Math.random() * this.treeFacts.length)];
+                } else if (lowerMessage.includes('plant') || lowerMessage.includes('flower')) {
+                    response = this.plantFacts[Math.floor(Math.random() * this.plantFacts.length)];
+                } else if (lowerMessage.includes('forest')) {
+                    response = "Forests cover about 31% of the Earth's land area and are vital for biodiversity and climate regulation.";
+                } else if (lowerMessage.includes('animal') || lowerMessage.includes('wildlife')) {
+                    response = "Forests are home to 80% of terrestrial biodiversity! From tiny insects to majestic bears, each plays a crucial role.";
+                } else if (lowerMessage.includes('season') || lowerMessage.includes('autumn') || lowerMessage.includes('fall')) {
+                    response = "The changing colors in autumn are caused by the breakdown of chlorophyll, revealing other pigments in the leaves.";
+                } else if (lowerMessage.includes('joke')) {
+                    const jokes = [
+                        "Why did the tree go to the dentist? For a root canal!",
+                        "What did the tree wear to the pool party? Swim trunks!",
+                        "Why don't trees use social media? They prefer to keep things private - they're very branchy!",
+                        "What's a tree's least favorite month? Sep-timber!"
+                    ];
+                    response = jokes[Math.floor(Math.random() * jokes.length)];
+                } else if (lowerMessage.includes('help')) {
+                    response = "I can tell you about trees, plants, forest ecosystems, wildlife, or share nature facts and jokes! What interests you?";
+                } else {
+                    response = this.natureResponses[Math.floor(Math.random() * this.natureResponses.length)];
+                }
+                
+                this.addMessage(response, 'bot');
+            }
+            
+            showTyping() {
+                this.typingIndicator.style.display = 'block';
+                this.scrollToBottom();
+            }
+            
+            hideTyping() {
+                this.typingIndicator.style.display = 'none';
+            }
+            
+            scrollToBottom() {
+                setTimeout(() => {
+                    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+                }, 100);
+            }
+            
+            createLeaves() {
+                const leavesContainer = document.getElementById('leaves');
+                
+                for (let i = 0; i < 15; i++) {
+                    const leaf = document.createElement('div');
+                    leaf.className = 'leaf';
+                    leaf.style.left = Math.random() * 100 + '%';
+                    leaf.style.animationDelay = Math.random() * 15 + 's';
+                    leaf.style.animationDuration = (10 + Math.random() * 10) + 's';
+                    leaf.style.opacity = 0.3 + Math.random() * 0.7;
+                    leaf.style.transform = `scale(${0.5 + Math.random()}) rotate(${Math.random() * 360}deg)`;
+                    leavesContainer.appendChild(leaf);
+                }
+            }
+            
+            createFallingLeaf() {
+                const leavesContainer = document.getElementById('leaves');
+                const leaf = document.createElement('div');
+                leaf.className = 'leaf';
+                leaf.style.left = 30 + Math.random() * 40 + '%';
+                leaf.style.animationDelay = '0s';
+                leaf.style.animationDuration = (5 + Math.random() * 5) + 's';
+                leaf.style.opacity = 0.7 + Math.random() * 0.3;
+                leaf.style.transform = `scale(${0.7 + Math.random() * 0.5}) rotate(${Math.random() * 360}deg)`;
+                leavesContainer.appendChild(leaf);
+                
+                // Remove leaf after animation completes
+                setTimeout(() => {
+                    leaf.remove();
+                }, 15000);
+            }
+        }
+        
+        // Initialize the chatbot when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new ChatBot();
+        });
+    </script>
+</body>
+</html>

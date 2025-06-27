@@ -1,7 +1,4 @@
-Here is a **README.md** file for your **Forest AI Chatbot** project. You can use this in your GitHub repository or project documentation:
-
 # 🌳 Forest AI Chatbot
-
 A beautifully styled, interactive web-based chatbot designed to educate users about forests, trees, plants, wildlife, and nature. Built with HTML, CSS, and JavaScript, this bot simulates a friendly AI nature guide within a serene and aesthetic forest-themed interface.
 
 ## 🌿 Features
@@ -62,7 +59,7 @@ The bot analyzes user input and matches it with a relevant category using keywor
 
 ## 📸 Screenshots
 
-> *(Optional – add screenshots here)*
+
 
 ## 🌱 Credits
 
